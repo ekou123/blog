@@ -2,8 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 )
@@ -13,80 +11,81 @@ type Config struct {
 	User  string `json:"current_user"`
 }
 
+type State struct {
+	Cfg *Config
+}
+
+type Command struct {
+	Name string
+	Args []string
+}
+
+type Commands struct {
+	Handler map[string]func(*State, Command) error
+}
+
 const ConfigFileName = ".gatorconfig.json"
 
 func Read() (Config, error) {
 
-	config := Config{}
-
-	filePath, err := GetConfigFilePath()
+	fullPath, err := GetConfigFilePath()
 	if err != nil {
-		return Config{}, fmt.Errorf("cannot get config file path: %v", err)
+		return Config{}, err
 	}
 
-	configFile, err := os.Open(filePath)
+	file, err := os.Open(fullPath)
 	if err != nil {
-		return Config{}, fmt.Errorf("cannot open config file: %v", err)
+		return Config{}, err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	cfg := Config{}
+	err = decoder.Decode(&cfg)
+	if err != nil {
+		return Config{}, err
 	}
 
-	defer configFile.Close()
-
-	var data []byte
-	data, err = io.ReadAll(configFile)
-	if err != nil {
-		return Config{}, fmt.Errorf("cannot read config file: %v", err)
-	}
-
-	err = json.Unmarshal(data, &config)
-
-	return config, nil
+	return cfg, nil
 
 }
 
 func GetConfigFilePath() (string, error) {
-	homeDir, err := os.UserHomeDir()
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("cannot get home dir: %v", err)
+		return "", err
 	}
+	fullPath := filepath.Join(home, ConfigFileName)
 
-	return filepath.Join(homeDir, ConfigFileName), nil
+	return fullPath, nil
 }
 
-func SetUser(cfg Config) error {
-	currentConfig, err := Read()
-	if err != nil {
-		return fmt.Errorf("cannot read config file: %v", err)
-	}
+func (cfg *Config) SetUser(username string) error {
+	// Update the current user name
+	cfg.User = username
 
-	if currentConfig.DbURL == "" {
-		currentConfig.DbURL = "postgres://example"
-	}
+	// Write the updated config to file
+	return Write(*cfg)
 
-	currentConfig.User = cfg.User
-
-	err = Write(currentConfig)
-	if err != nil {
-		return fmt.Errorf("cannot write config file: %v", err)
-	}
-
-	return nil
 }
 
 func Write(cfg Config) error {
 
-	data, err := json.Marshal(cfg)
+	fullPath, err := GetConfigFilePath()
 	if err != nil {
-		return fmt.Errorf("cannot marshal current config: %v", err)
+		return err
 	}
 
-	filePath, err := GetConfigFilePath()
+	file, err := os.Create(fullPath)
 	if err != nil {
-		return fmt.Errorf("cannot get config file path: %v", err)
+		return err
 	}
+	defer file.Close()
 
-	err = os.WriteFile(filePath, data, 0600)
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(cfg)
 	if err != nil {
-		return fmt.Errorf("cannot write config file: %v", err)
+		return err
 	}
 
 	return nil

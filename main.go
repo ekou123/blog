@@ -3,25 +3,44 @@ package main
 import (
 	"fmt"
 	"github.com/ekou123/blog/internal/config"
+	"log"
+	"os"
 )
 
 func main() {
-	cfg := config.Config{
-		User: "Ethan",
+
+	cfg, err := config.Read()
+	if err != nil {
+		log.Fatalf("error reading config: %v", err)
 	}
 
-	err := config.SetUser(cfg)
+	err = cfg.SetUser("Benson")
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalf("error setting Benson user: %v", err)
+	}
+
+	programState := &config.State{
+		Cfg: &cfg,
+	}
+
+	cmds := config.Commands{
+		Handler: make(map[string]func(*config.State, config.Command) error),
+	}
+
+	cmds.Register("login", config.HandlerLogin)
+
+	programState.Cfg.SetUser("HelloWorld")
+
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: cli <command> [args...]")
 		return
 	}
 
-	newConfig, err := config.Read()
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
+
+	err = cmds.Run(programState, config.Command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
-
-	fmt.Println(newConfig)
-
 }
