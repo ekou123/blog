@@ -17,12 +17,7 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	fmt.Println(cfg)
-
-	err = cfg.SetUser("Benson")
-	if err != nil {
-		log.Fatalf("error setting Benson user: %v", err)
-	}
+	cfg.DbURL = "postgres://postgres:postgres@localhost:5432/gator?sslmode=disable"
 
 	programState := &config.State{
 		Cfg: &cfg,
@@ -34,7 +29,18 @@ func main() {
 
 	cmds.Register("login", config.HandlerLogin)
 
-	programState.Cfg.SetUser("HelloWorld")
+	db, err := sql.Open("postgres", programState.Cfg.DbURL)
+	if err != nil {
+		fmt.Println("Unable to open sql connection")
+		return
+	}
+	defer db.Close()
+
+	dbQueries := database.New(db)
+
+	programState.Db = dbQueries
+
+	cmds.Register("register", config.HandlerRegister)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: cli <command> [args...]")
@@ -44,16 +50,11 @@ func main() {
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
 
+	fmt.Println("URL: ", programState.Cfg.DbURL)
+
 	err = cmds.Run(programState, config.Command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := sql.Open("postgres", programState.Cfg.DbURL)
-	if err != nil {
-		fmt.Println("Unable to open sql connection")
-		return
-	}
-
-	dbQueries := database.New(db)
 }

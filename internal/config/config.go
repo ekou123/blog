@@ -27,6 +27,7 @@ type Commands struct {
 }
 
 const ConfigFileName = ".gatorconfig.json"
+const DbURL = "postgres://postgres:postgres@localhost:5432/gator?sslmode=disable"
 
 func Read() (Config, error) {
 
