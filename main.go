@@ -42,6 +42,10 @@ func main() {
 
 	cmds.Register("register", config.HandlerRegister)
 
+	cmds.Register("reset", config.HandlerReset)
+
+	cmds.Register("users", config.HandlerUsers)
+
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: cli <command> [args...]")
 		return
@@ -49,8 +53,6 @@ func main() {
 
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
-
-	fmt.Println("URL: ", programState.Cfg.DbURL)
 
 	err = cmds.Run(programState, config.Command{Name: cmdName, Args: cmdArgs})
 	if err != nil {

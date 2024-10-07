@@ -1,6 +1,11 @@
 package config
 
-import "fmt"
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+)
 
 func HandlerLogin(s *State, cmd Command) error {
 	if len(cmd.Args) != 1 {
@@ -9,7 +14,14 @@ func HandlerLogin(s *State, cmd Command) error {
 
 	name := cmd.Args[0]
 
-	err := s.Cfg.SetUser(name)
+	_, err := s.Db.GetUser(context.Background(), name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("user doesn't exist: %s", name)
+	} else if err != nil {
+		return fmt.Errorf("error querying user: %v", err)
+	}
+
+	err = s.Cfg.SetUser(name)
 	if err != nil {
 		return fmt.Errorf("couldn't set current user: %v", err)
 	}
