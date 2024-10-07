@@ -1,8 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/ekou123/blog/internal/config"
+	"github.com/ekou123/blog/internal/database"
+	_ "github.com/lib/pq"
 	"log"
 	"os"
 )
@@ -13,6 +16,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
+
+	fmt.Println(cfg)
 
 	err = cfg.SetUser("Benson")
 	if err != nil {
@@ -43,4 +48,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db, err := sql.Open("postgres", programState.Cfg.DbURL)
+	if err != nil {
+		fmt.Println("Unable to open sql connection")
+		return
+	}
+
+	dbQueries := database.New(db)
 }

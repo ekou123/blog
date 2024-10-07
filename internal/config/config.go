@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/ekou123/blog/internal/database"
 	"os"
 	"path/filepath"
 )
@@ -12,6 +13,7 @@ type Config struct {
 }
 
 type State struct {
+	Db  *database.Queries
 	Cfg *Config
 }
 
