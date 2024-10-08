@@ -46,6 +46,12 @@ func main() {
 
 	cmds.Register("users", config.HandlerUsers)
 
+	cmds.Register("agg", config.HandlerAgg)
+
+	cmds.Register("addfeed", config.HandlerAddFeed)
+
+	cmds.Register("listfeeds", config.HandlerListFeeds)
+
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: cli <command> [args...]")
 		return
